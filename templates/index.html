@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>G-c Print</title>
+</head>
+<body>
+{% if worker['pid'] %}
+<table>
+<tr><td>File</td><td>{{ app['printfile'] }}</td></tr>
+<tr><td>Running Pid</td><td>{{ worker['pid'] }}</td><tr>
+<tr><td>Status</td><td>{{ worker['state'] }}</td></tr>
+<tr><td>
+<form action="/kill" method="get">
+    <input type="submit" value="Kill" onclick="return confirm('Are you sure to KILL printing?')"/>
+</form>
+</td></tr>
+<table>
+<hr/>
+{% else %}
+{% if ports[0] %}
+<form action="/set" method="get">
+    <label for="port">Port</label>
+    <select name="port" id="port">
+{% for port in ports %}
+        <option value="{{ port['name'] }}" {% if port['selected'] %}selected{% endif %}>{{ port['name'] }}</option>
+{% endfor %}
+    </select>
+    <input type="submit" value="Set"/>
+</form>
+{% else %}
+No way to print.
+{% endif %}
+<hr/>
+<form action="/store" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+    <label for="gcode">Upload G-code</label>
+    <input id="gcode" name="gcode" type="file" value="" />
+    <input type="submit" value="Upload" />
+</form>
+<hr/>
+{% endif %}
+{% if outfile or errfile %}
+Last logs:
+{% if outfile %}<a href="{{outfile}}" target="_blank">Output</a><span/>{% endif %}
+{% if errfile %}<a href="{{errfile}}" target="_blank">Logging</a>{% endif %}
+<hr/>
+{% endif %}
+{% if worker['pid'] %}
+Output
+<div><pre>{{ output }}</pre></div>
+<br/>
+Logging
+<div><pre>{{ logging }}</pre></div>
+<hr/>
+{% endif %}
+<form action="/delete">
+<table>
+<thead><tr><th>Name</th><th>Size</th><th><input type="submit" value="Del" onclick="return confirm('Are you sure to delete selected files?')"></th></thead>
+<tbody>
+{% for id in files.keys() %}
+<tr>
+<td>
+{% if not worker['pid'] and app['usbport'] %}
+<a href="/start?name={{id}}" onclick="return confirm('Are you ready to print {{id}} ?')">{{ id }}</a>
+{% else %}
+{{ id }}
+{% endif %}
+</td>
+<td style="text-align:right">{{ files[id]['size']}}</td>
+<td style="text-align:center"><input type="checkbox" name="name" value="{{id}}"/></td>
+</tr>
+{% endfor %}
+</tbody>
+<table>
+</form>
+</body>
+</html>
