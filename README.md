@@ -15,3 +15,4 @@ _stream.py_ will be used to send g-code to your printer.
 Enjoy!
 
 ps: Feel free to add your ideas!
+pps: I think it is good enough to send me a dollar to PayPal mudrokot@gmail.com :)
