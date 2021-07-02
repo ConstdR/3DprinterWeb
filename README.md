@@ -9,6 +9,9 @@ Usage is simple, just run: _web.py_ and point your web browser to the server/por
 
 _stream.py_ will be used to send g-code to your printer.
 
+![alt text](https://github.com/ConstdR/3DprinterWeb/blob/main/img/progress.png)
+
+
 Enjoy!
 
 ps: Feel free to add your ideas!
