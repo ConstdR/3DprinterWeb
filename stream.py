@@ -12,8 +12,7 @@ args = None
 gfile= None
 ser = None
 totalcount = 0
-startt_time = time.time()
-start_time = startt_time
+start_time = None 
 
 def main():
     global args
@@ -60,42 +59,48 @@ def finish(excode=0):
     global gfile, ser
     gfile.close()
     ser.close()
-    hours, rest = divmod( time.time()-startt_time, 3600 )
+    hours, rest = divmod( time.time()-start_time, 3600 )
     minutes, seconds = divmod( rest, 60 )
     print( "Finished in {}h {:0>2}m".format( int(hours),int(minutes) ) )
     sys.exit(excode)
 
 def Dprint():
-    global gfile, ser, totalcount
+    global gfile, ser, totalcount, start_time
     lg.debug("Starting")
     count = 0
+    zcount = 0
     for line in gfile:
-        count += 1
-        if count % 100 == 0:
-            progress = count/totalcount
-            running = time.time()-start_time
-            speed = count / ( time.time()-start_time )
-            estimate = ( (1-progress) * totalcount ) / speed
-            print("Progress: %.2f %% Running: %.2f min Estimate left: %.2f min" % ( progress*100, running/60, estimate/60 ), flush=True)
+        if line.startswith("G1 Z"):
+            zcount += 1
+        if line.startswith('G1'):
+            count += 1
+            if not start_time:
+                start_time = time.time()
+            if count % 20 == 0:
+                progress = count/totalcount
+                runningh, runningm = divmod(time.time()-start_time, 3600)
+                speed = count / ( time.time()-start_time )
+                estimateh, estimatem = divmod(( (1-progress) * totalcount ) / speed, 3600)
+                print("Progress: %.2f %% Z: %s Running: %s h %.0f min Estimate left: %s h %.0f min" % 
+                    ( progress*100, zcount-2 , int(runningh), round(runningm/60), int(estimateh), round(estimatem/60) ), flush=True)
         try:
             line = line.strip()         # strip EOL
             line = line.split(';')[0]   # strip comments
             if not line.strip():        # skip empty lines
                 continue
 
-            lg.debug("Line: %s : %s" % (count, line))
+            lg.debug("Line: %s Z: %s : %s" % (count, zcount, line))
 
             ser.write( bytes(line + '\n', "utf-8") )
             while True:
                 out = ser.readline().decode("utf-8").strip()    # blocking
+                lg.debug(out)
                 if out.startswith("ok"): 
                     break
                 elif out.startswith("T:"):
                     print("Heating: %s" % out, flush=True)
                 elif out.startswith("echo:busy: processing"):
                     pass
-                else:
-                    lg.debug(out)
 
         except Exception as e:
             lg.error("Exception interrupt: %s" % e)
@@ -105,7 +110,9 @@ def Dprint():
 def countlines(fn):
     s=0
     with open(fn, 'r') as file:
-        for _ in file: s+=1
+        for line in file:
+            if line.startswith('G1'):
+                s+=1
     return s
 
 def loggerConfig(level=0, log_file=None):

@@ -148,7 +148,7 @@ async def index(request):
     output = None
     logging = None
     for f in glob.glob('/dev/ttyUSB*'):
-        selected = None
+        sel = None
         if not app['usbport']: app['usbport'] = f
         if app['usbport'] == f: sel = True
         ports.append({ 'name':f, 'selected':sel})
