@@ -49,9 +49,10 @@ def start():
     lg.debug("Init printer...")
     ser.dtr = True
     # wait until printer ready
+    return
     while True:
         out = ser.readline().decode("utf-8").strip()
-        lg.debug(out)
+        lg.debug('Got: %s' % out)
         if out.lower().startswith("init"):
             break
 
@@ -93,9 +94,13 @@ def Dprint():
 
             ser.write( bytes(line + '\n', "utf-8") )
             while True:
-                out = ser.readline().decode("utf-8").strip()    # blocking
-                lg.debug(out)
-                if out.startswith("ok"): 
+                try:
+                    out = ser.readline().decode("utf-8").strip()    # blocking
+                except Exception as e:
+                    lg.error("Bad response %s" % e)
+                    continue
+                lg.debug('Got: %s' % out)
+                if out.lower().startswith("ok"):
                     break
                 elif out.startswith("T:"):
                     print("Heating: %s" % out, flush=True)
