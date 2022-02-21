@@ -7,7 +7,7 @@
 {% if worker['pid'] %}
 <table>
 <tr><td>File</td><td>{{ app['printfile'] }}</td></tr>
-<tr><td>Running Pid</td><td>{{ worker['pid'] }}</td><tr>
+<tr><td>Pid</td><td>{{ worker['pid'] }}</td><tr>
 <tr><td>Status</td><td>{{ worker['state'] }}</td></tr>
 <tr><td>
 <form action="/kill" method="get">

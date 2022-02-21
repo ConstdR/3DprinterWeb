@@ -3,7 +3,7 @@
 """
 G-code streamer
 """
-import sys, os, serial, time
+import sys, os, serial, time, re
 import argparse
 import logging
 
@@ -34,8 +34,8 @@ def main():
 def start():
     global gfile, ser, args, totalcount
     gfile = open(args.file, 'r')
-    totalcount = countlines(args.file)
-    lg.debug("Using file: %s lines: %s" % (args.file, totalcount))
+    totalcount = getFullExtrude()
+    lg.debug("Using file: %s Filament: %.2f m" % (args.file, totalcount))
 
     ser = serial.Serial()
     ser.port = args.port
@@ -74,13 +74,13 @@ def Dprint():
         if line.startswith("G1 Z"):
             zcount += 1
         if line.startswith('G1'):
-            count += 1
+            count += getLineExtrude(line)
             if not start_time:
                 start_time = time.time()
-            if count % 20 == 0:
-                progress = count/totalcount
-                runningh, runningm = divmod(time.time()-start_time, 3600)
-                speed = count / ( time.time()-start_time )
+            progress = float(count/1000) / totalcount
+            runningh, runningm = divmod(time.time()-start_time, 3600)
+            speed = float(count/1000) / ( time.time()-start_time )
+            if speed > 0:
                 estimateh, estimatem = divmod(( (1-progress) * totalcount ) / speed, 3600)
                 print("Progress: %.2f %% Z: %s Running: %s h %.0f min Estimate left: %s h %.0f min" % 
                     ( progress*100, zcount-2 , int(runningh), round(runningm/60), int(estimateh), round(estimatem/60) ), flush=True)
@@ -90,7 +90,7 @@ def Dprint():
             if not line.strip():        # skip empty lines
                 continue
 
-            lg.debug("Line: %s Z: %s : %s" % (count, zcount, line))
+            lg.debug("Extruder: %.2f m Z: %s Line: %s" % (float(count/1000), zcount, line))
 
             ser.write( bytes(line + '\n', "utf-8") )
             while True:
@@ -112,13 +112,26 @@ def Dprint():
             ser.write( bytes("M104 S0\nM140 S0\nM107\nM84\n", "utf-8") )
             finish(1)
 
-def countlines(fn):
-    s=0
-    with open(fn, 'r') as file:
-        for line in file:
-            if line.startswith('G1'):
-                s+=1
-    return s
+def getFullExtrude():
+    gfile = open(args.file, 'r')
+    extrude = 0
+    for line in gfile:
+        extrude += getLineExtrude(line)
+    extrude = float(extrude/1000)
+    gfile.close()
+    return (extrude)
+
+def getLineExtrude(ln):
+    global lg
+    e = 0
+    ln=ln.strip()
+    if ln.startswith('G1'):
+        try:
+            e = float(re.findall(r'E(.*)$',ln)[0])
+            if e < 0: e = 0
+        except Exception as ex:
+            pass
+    return(e)
 
 def loggerConfig(level=0, log_file=None):
     lg.setLevel({1: 'ERROR', 2: 'WARNING', 3: 'INFO'}.get(level, 'DEBUG') if level else 'CRITICAL')
