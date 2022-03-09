@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 # encoding: utf-8
 """
 G-code streamer
@@ -71,8 +71,6 @@ def Dprint():
     count = 0
     zcount = 0
     for line in gfile:
-        if line.startswith("G1 Z"):
-            zcount += 1
         if line.startswith('G1'):
             count += getLineExtrude(line)
             if not start_time:
@@ -80,10 +78,12 @@ def Dprint():
             progress = float(count/1000) / totalcount
             runningh, runningm = divmod(time.time()-start_time, 3600)
             speed = float(count/1000) / ( time.time()-start_time )
-            if speed > 0:
-                estimateh, estimatem = divmod(( (1-progress) * totalcount ) / speed, 3600)
-                print("Progress: %.2f %% Z: %s Running: %s h %.0f min Estimate left: %s h %.0f min" % 
-                    ( progress*100, zcount-2 , int(runningh), round(runningm/60), int(estimateh), round(estimatem/60) ), flush=True)
+            if line.startswith("G1 Z"):
+                zcount += 1
+                if speed > 0 :
+                    estimateh, estimatem = divmod(( (1-progress) * totalcount ) / speed, 3600)
+                    print("Progress: %.2f %% Z: %s Running: %s h %.0f min Estimate left: %s h %.0f min" %
+                        ( progress*100, zcount-2 , int(runningh), round(runningm/60), int(estimateh), round(estimatem/60) ), flush=True)
         try:
             line = line.strip()         # strip EOL
             line = line.split(';')[0]   # strip comments
@@ -145,4 +145,4 @@ def loggerConfig(level=0, log_file=None):
 if __name__ == '__main__':
     main()
 
-# vim: ai ts=4 sts=4 et sw=4 ft=python 
+# vim: ai ts=4 sts=4 et sw=4 ft=python
