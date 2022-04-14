@@ -80,9 +80,9 @@ def Dprint():
             speed = float(count/1000) / ( time.time()-start_time )
             if line.startswith("G1 Z"):
                 zcount += 1
-                if speed > 0 :
-                    estimateh, estimatem = divmod(( (1-progress) * totalcount ) / speed, 3600)
-                    print("Progress: %.2f %% Z: %s Running: %s h %.0f min Estimate left: %s h %.0f min" %
+            if speed > 0 :
+                estimateh, estimatem = divmod(( (1-progress) * totalcount ) / speed, 3600)
+                print("Progress: %.2f %% Z: %s Running: %s h %.0f min Estimate left: %s h %.0f min" %
                         ( progress*100, zcount-2 , int(runningh), round(runningm/60), int(estimateh), round(estimatem/60) ), flush=True)
         try:
             line = line.strip()         # strip EOL
@@ -99,13 +99,14 @@ def Dprint():
                 except Exception as e:
                     lg.error("Bad response %s" % e)
                     continue
-                lg.debug('Got: %s' % out)
                 if out.lower().startswith("ok"):
                     break
                 elif out.startswith("T:"):
                     print("Heating: %s" % out, flush=True)
-                elif out.startswith("echo:busy: processing"):
-                    pass
+                elif "processing" in out:
+                    continue
+                else:
+                    lg.debug('Got: %s' % out)
 
         except Exception as e:
             lg.error("Exception interrupt: %s" % e)
