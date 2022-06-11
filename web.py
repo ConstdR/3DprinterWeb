@@ -10,7 +10,7 @@ import jinja2
 import tempfile
 
 from aiohttp import web
-
+from pathlib import Path
 from pprint import pprint as pp
 
 lg = logging.getLogger(__file__)
@@ -162,11 +162,15 @@ async def index(request):
     errlst = glob.glob('tmp/*err.txt')
     if len(errlst): errfile = errlst[0]
 
-    for f in os.listdir('storage'):
+    listf = sorted(Path('storage/').iterdir(), key=os.path.getmtime)
+    listf.reverse()
+
+    for f in listf:
         try:
+            f = re.split('/', str(f))[1]
             stat = os.stat(os.path.join('storage/', f))
             files[f] = {'size':stat.st_size }
-        except:
+        except Exception as e:
             lg.error("Skip %s, %s" % (f, e))
     if app['printer']:
         if app['printer'].returncode is not None:
